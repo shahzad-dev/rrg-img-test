@@ -1,6 +1,7 @@
 import React from 'react';
 import Relay from 'react-relay';
-import hobbyAddMutation from './hobbyAddMutation';
+import addImageMutation from './addImageMutation';
+const Dropzone = require('react-dropzone');
 
 class App extends React.Component {
 
@@ -19,26 +20,49 @@ class App extends React.Component {
 
 _handle_OnChange = ( event ) => {
     //this.setState({count: this.state.count + 1});
-    console.log(this.props.viewer.hobbies.edges.length);
+    console.log(this.props.viewer.images.edges.length);
     this.context.relay.commitUpdate(
-        new hobbyAddMutation( {
-          id: `${this.props.viewer.hobbies.edges.length + 1}`,
-          title: `blah`, // ${this.state.count}`,
+        new addImageMutation( {
+          name: `blah`, // ${this.state.count}`,
           Viewer: this.props.viewer
         } )
       )
-    this.setState({count: this.props.viewer.hobbies.edges.length });
+    this.setState({count: this.props.viewer.images.edges.length });
  }
+
+
+  _onDrop = (files) => {
+      console.log("Total Files uploaded", files.length, "Files:", files);
+      let onSuccess = () => {
+          console.log('Mutation successful!');
+        };
+      let onFailure = (transaction) => {
+          console.log('Mutation failed!', transaction);
+      };
+      files.forEach((file)=> {
+        this.context.relay.commitUpdate(
+          new addImageMutation({
+            file: file,
+            Viewer: this.props.viewer,
+          }),
+          {onSuccess, onFailure}
+        );
+      });
+
+  }
+
   render() {
     return (
       <div>
-        <h1>Hobbies list (Total: {this.state.count})</h1>
+        <h1>list (Total: {this.state.count})</h1>
         <ul>
-          {this.props.viewer.hobbies.edges.map((edge, i) =>
-            <li key={i}>{edge.node.title} (ID: {i})</li>
+          {this.props.viewer.images.edges.map((edge, i) =>
+            <li key={i}>{edge.node.name} (ID: {i})</li>
           )}
         </ul>
-        <button onClick={this._handle_OnChange}>Add New</button>
+        <Dropzone onDrop={this._onDrop}>
+          <div>Try dropping some files here, or click to select files to upload.</div>
+        </Dropzone>
       </div>
     );
   }
@@ -48,14 +72,14 @@ export default Relay.createContainer(App, {
   fragments: {
     viewer: () => Relay.QL`
       fragment on User {
-        hobbies(first: 100) {
+        images(first: 100) {
           edges {
             node {
-              title,
+              name,
             },
           },
         },
-        ${hobbyAddMutation.getFragment('Viewer')},
+        ${addImageMutation.getFragment('Viewer')},
       }
     `,
   },

@@ -33,10 +33,14 @@ import {
   // Import methods that your schema can use to interact with your database
   User,
   Widget,
+  Image,
   getUser,
   getViewer,
   getWidget,
   getWidgets,
+  getImage,
+  getImages,
+  setImage,
 } from './database';
 
 /**
@@ -52,6 +56,8 @@ var {nodeInterface, nodeField} = nodeDefinitions(
       return getUser(id);
     } else if (type === 'Widget') {
       return getWidget(id);
+  } else if (type === 'Image') {
+      return getImage(id);
     } else {
       return null;
     }
@@ -109,6 +115,19 @@ var widgetType = new GraphQLObjectType({
   interfaces: [nodeInterface],
 });
 
+var imageType = new GraphQLObjectType({
+  name: 'Image',
+  description: 'An Image',
+  fields: () => ({
+    id: globalIdField('Image'),
+    name: {
+      type: GraphQLString,
+      description: 'The name of the file',
+    },
+  }),
+  interfaces: [nodeInterface],
+});
+
 var addressType = new GraphQLObjectType({
   name: 'Address',
   description: 'A user address',
@@ -158,6 +177,9 @@ var {connectionType: addressConnection} =
 var {connectionType: widgetConnection} =
   connectionDefinitions({name: 'Widget', nodeType: widgetType});
 
+var {connectionType: imageConnection, edgeType: imageEdge} =
+    connectionDefinitions({name: 'Image', nodeType: imageType});
+
 var {connectionType: hobbyConnection} =
   connectionDefinitions({name: 'Hobby', nodeType: hobbyType});
 
@@ -172,6 +194,12 @@ var userType = new GraphQLObjectType({
       description: 'A person\'s collection of widgets',
       args: connectionArgs,
       resolve: (_, args) => connectionFromArray(getWidgets(), args),
+    },
+    images: {
+      type: imageConnection,
+      description: 'A person\'s collection of images',
+      args: connectionArgs,
+      resolve: (_, args) => connectionFromArray(getImages(), args),
     },
     addresses: {
         type: addressConnection,
@@ -314,11 +342,51 @@ const hobbyAddMutation = mutationWithClientMutationId({
   }
 });
 
+
+const imageAddMutation = mutationWithClientMutationId({
+  name: 'AddImage',
+  inputFields: {
+    name: {
+      type: new GraphQLNonNull(GraphQLString)
+    },
+  },
+  outputFields: {
+    image: {
+      type: imageEdge,
+      resolve: (payload, args, options) => {
+        console.log("Payload:", payload, "Args:", args , "Options", options);
+        console.log('Uploading: ' + filename + ' type: ' + filetype);
+            //check if user has the Authtifcation to upload
+            if (!uploadAuth(options.rootValue.request)) {
+              (new myImages()).rewind();
+              console.log('Upload Access Denined');
+              throw Error('Upload Access Denined');
+            }
+
+        var image = getImage[payload.imageId];
+        return {
+          cursor: cursorForObjectInConnection(getImages(), image),
+          node: image,
+        };
+      },
+    },
+    viewer: {
+      type: userType,
+      resolve: () => getUser('1') //VERY IMPORTANT OTHERWISE FRONTEND Component WILL NOT REFRESH
+    }
+  },
+  mutateAndGetPayload: (input) => {
+    console.log(input);
+    return {imageId: setImage(input.name) };
+  }
+});
+
 var mutationType = new GraphQLObjectType({
   name: 'Mutation',
   fields: () => ({
     insertAddress: addressAddMutation,
     insertHobby: hobbyAddMutation,
+    addImage: imageAddMutation,
   })
 });
 

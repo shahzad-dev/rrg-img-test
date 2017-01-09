@@ -2,6 +2,7 @@ import chokidar from 'chokidar';
 import express from 'express';
 import graphQLHTTP from 'express-graphql';
 import path from 'path';
+import multer from 'multer';
 import webpack from 'webpack';
 import WebpackDevServer from 'webpack-dev-server';
 import {clean} from 'require-clean';
@@ -57,7 +58,19 @@ function startGraphQLServer(callback) {
     clean('./data/schema');
     const {Schema} = require('./data/schema');
     const graphQLApp = express();
-    graphQLApp.use('/', graphQLHTTP({graphiql: true, pretty: true, schema: Schema}));
+    const storage = multer.memoryStorage();
+    graphQLApp.use('/', multer({storage}).single('file'));
+
+    graphQLApp.use('/', graphQLHTTP(req => {
+        return ({
+            schema: Schema,
+            rootValue: {
+                request: req
+            },
+            graphiql: true,
+            pretty: true
+        });
+    }));
     graphQLServer = graphQLApp.listen(GRAPHQL_PORT, () => {
         console.log(`GraphQL server is now running on http://localhost:${GRAPHQL_PORT}`);
         if (callback) {

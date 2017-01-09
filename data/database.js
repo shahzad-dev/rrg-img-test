@@ -10,6 +10,7 @@
 // Model types
 class User {}
 class Widget {}
+class Image {}
 
 // Mock data
 var viewer = new User();
@@ -21,6 +22,7 @@ var widgets = ['What\'s-it', 'Who\'s-it', 'How\'s-it'].map((name, i) => {
   widget.id = `${i}`;
   return widget;
 });
+var images = [];
 
 module.exports = {
   // Export methods that your schema can use to interact with your database
@@ -28,6 +30,14 @@ module.exports = {
   getViewer: () => viewer,
   getWidget: (id) => widgets.find(w => w.id === id),
   getWidgets: () => widgets,
+  getImage: (id) => images.find(img => img.id === id),
+  setImage: (name) => {
+  let image = new Image();
+  image.name = name;
+  image.id = `${images.length+1}`;
+  return ( images.push(image) - 1 )},
+  getImages: () => images,
   User,
   Widget,
+  Image,
 };
