@@ -1,8 +1,8 @@
 {
-  "name": "rrg-test-project",
+  "name": "rrg-img-test",
   "private": true,
   "description": "A quick way to test GraphQl & Relay",
-  "repository": "shahzad-dev/react-graphql-relay-playground",
+  "repository": "shahzad-dev/rrg-img-test",
   "version": "0.0.1",
   "scripts": {
     "start": "babel-node ./server.js",

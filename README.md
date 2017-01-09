@@ -1,1 +1,1 @@
-# rrg-test-project
+# rrg-img-test
